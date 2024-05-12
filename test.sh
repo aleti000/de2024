@@ -1,24 +1,35 @@
 #!/bin/bash
 nbr=5 # количество мостов на этом стенде
-ens18=/etc/net/ifaces/ens18
+ens18=/etc/net/ifaces/ens18/ipv4address
+ens18_gw=/etc/net/ifaces/ens18/ipv4route
+ens18_dns=/etc/net/ifaces/ens18/resolv.conf
 ens19=/etc/net/ifaces/ens19
 hostname=/etc/hostname
+#HQ-R
 hq_r_name=$(grep hq_r_name= ./info | sed 's/.*hq_r_name=//')
-hq_srv_name=$(grep hq_srv_name= ./info | sed 's/.*hq_srv_name=//')
-hq_r_name=$(grep hq_r_name= ./info | sed 's/.*hq_r_name=//')
-br_r_name=$(grep br_r_name= ./info | sed 's/.*br_r_name=//')
-br_srv_name=$(grep br_srv_name= ./info | sed 's/.*br_srv_name=//')
-cli_name=$(grep cli_name= ./info | sed 's/.*cli_name=//')
-isp_name=$(grep isp_name= ./info | sed 's/.*isp_name=//' )
 hq_r_isp=$(grep hq_r_isp= ./info | sed 's/.*hq_r_isp=//')
 hq_r_hq_srv=$(grep hq_r_hq_srv= ./info | sed 's/.*hq_r_hq_srv=//')
+hq_r_gw=$(grep hq_r_gw= ./info | sed 's/.*hq_r_gw=//')
+hq_r_dns=$(grep hq_r_dns= ./info | sed 's/.*hq_r_dns=//')
+#BR-R
+br_r_name=$(grep br_r_name= ./info | sed 's/.*br_r_name=//')
 br_r_isp=$(grep br_r_isp= ./info | sed 's/.*br_r_isp=//')
 br_r_br_srv=$(grep br_r_br_srv= ./info | sed 's/.*br_r_br_srv=//')
+br_r_gw=$(grep br_r_gw= ./info | sed 's/.*br_r_gw=//')
+br_r_dns=$(grep br_r_dns= ./info | sed 's/.*br_r_dns=//')
+#HQ-SRV
+hq_srv_name=$(grep hq_srv_name= ./info | sed 's/.*hq_srv_name=//')
 hq_srv=$(grep hq_srv= ./info | sed 's/.*hq_srv=//')
+hq_srv_gw=$(grep hq_srv_gw= ./info | sed 's/.*hq_srv_gw=//')
+hq_srv_dns=$(grep hq_srv_dns= ./info | sed 's/.*hq_srv_dns=//')
+#BR-SRV
+br_srv_name=$(grep br_srv_name= ./info | sed 's/.*br_srv_name=//')
 br_srv=$(grep br_srv= ./info | sed 's/.*br_srv=//')
+br_srv_gw=$(grep br_srv_gw= ./info | sed 's/.*br_srv_gw=//')
+br_srv_dns=$(grep br_srv_dns= ./info | sed 's/.*br_srv_dns=//')
+cli_name=$(grep cli_name= ./info | sed 's/.*cli_name=//')
+isp_name=$(grep isp_name= ./info | sed 's/.*isp_name=//' )
 cli=$(grep cli= ./info | sed 's/.*cli=//')
-
-#| tr -d '\r'
 
 function download_template { #Загрузка шаблонов машин CLI и SRV
     echo "Установка программного обеспечения, ожидайте"
@@ -124,15 +135,15 @@ function deploy_workplace { #Развертка стенда
         qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens19"
         qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens19/options"
         qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens19/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 172.16.1.5/30 > /etc/net/ifaces/ens19/ipv4address"
+        qm guest exec $nvm -- bash -c "echo 1.1.1.1/30 > /etc/net/ifaces/ens19/ipv4address"
         qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens20"
         qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens20/options"
         qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens20/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 172.16.0.1/24 > /etc/net/ifaces/ens20/ipv4address"
+        qm guest exec $nvm -- bash -c "echo 2.2.2.1/30 > /etc/net/ifaces/ens20/ipv4address"
         qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens21"
         qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens21/options"
         qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens21/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 172.16.1.1/24 > /etc/net/ifaces/ens21/ipv4address"
+        qm guest exec $nvm -- bash -c "echo 3.3.3.1/30 > /etc/net/ifaces/ens21/ipv4address"
         qm guest exec $nvm -- bash -c "sed -i '/^net.ipv4.ip_forward =/s/=.*/= 1/' /etc/net/sysctl.conf"
         qm guest exec $nvm -- bash -c "iptables -t nat -A POSTROUTING -j MASQUERADE"
         qm guest exec $nvm -- bash -c "iptables-save -f /etc/sysconfig/iptables"
@@ -195,29 +206,45 @@ function delete {
                 esac
 }
 
-function check_hostname {
-    echo "--------------Проверка имен устройств--------------"
-    check $(($isp + 1)) $hostname $hq_r_name
-    check $(($isp + 2)) $hostname $br_r_name
-    check $(($isp + 3)) $hostname $hq_srv_name
-    check $(($isp + 4)) $hostname $br_srv_name
-    check $(($isp + 5)) $hostname $cli_name
-    echo "--------------Проверка имен завершена--------------"
+function check_hostname () {
+    #Проверка настройки интерфейсов
+    if (qm guest exec "$1" -- cat "$2" | grep -q "$3"); then
+       #echo -e "Имя виртуальной машины "$1" - \033[32m"$3"\033[0m : задано \033[32mверно\033[0m"
+    result=$(($result + 1))
+    else
+        echo -e "Имя виртуальной машины "$1" - \033[31m"$3"\033[0m : задано \033[31mне верно\033[0m"
+    fi
 
 }
 
-
-
-# shellcheck disable=SC2120
-function check (){
-    #Проверка настройки интерфейсов
-    
+function check_ip () {
     if (qm guest exec "$1" -- cat "$2" | grep -q "$3"); then
-       echo -e "Имя устройства "$1" - \033[32m"$3"\033[0m : задано \033[32mверно\033[0m"
+       echo -e "IP адрес "$1" - \033[32m"$3"\033[0m : задано \033[32mверно\033[0m"
     else
-        echo -e "Имя устройства "$1" - \033[31m"$3"\033[0m : задано \033[31mне верно\033[0m"
+        echo -e "IP адрес "$1" - \033[31m"$3"\033[0m : задано \033[31mне верно\033[0m"
+    fi
+    if [ -z $4 ]; then
+        echo ""
+    else
+        if (qm guest exec "$1" -- cat "$4" | grep -q "$5"); then
+            echo -e "Шлюз "$1" - \033[32m"$5"\033[0m : задано \033[32mверно\033[0m"
+            else
+                echo -e "Шлюз "$1" - \033[31m"$5"\033[0m : задано \033[31mне верно\033[0m"
+        fi
+    fi
+    if [ -z $6 ]; then
+        echo ""
+    else
+        if (qm guest exec "$1" -- cat "$6" | grep -q "$7"); then
+        echo -e "DNS "$1" - \033[32m"$7"\033[0m : задано \033[32mверно\033[0m"
+        else
+            echo -e "DNS "$1" - \033[31m"$7"\033[0m : задано \033[31mне верно\033[0m"
+        fi
     fi
 }
+
+# shellcheck disable=SC2120
+
 
 function main() {
     clear
@@ -257,16 +284,37 @@ function main() {
         ;;
         5)
             read -p "Укажите номер рабочего места (VMID ISP): " isp
-            echo "Запуск машин рабочего места"
-            #qm start $isp
-            #qm start $(($isp+1))
-            #qm start $(($isp+2))
-            #qm start $(($isp+3))
-            #qm start $(($isp+4))
-            #qm start $(($isp+5))
-            #sleep 20
-            #echo -e "\033[32m DONE \033[0m" 
-            check_hostname
+            # echo "Запуск машин рабочего места"
+            # qm start $isp
+            # qm start $(($isp+1))
+            # qm start $(($isp+2))
+            # qm start $(($isp+3))
+            # qm start $(($isp+4))
+            # qm start $(($isp+5))
+            # sleep 20
+            # echo -e "\033[32m DONE \033[0m" 
+            # sleep 1
+            clear
+            echo "--------------Проверка имен устройств--------------"
+            result=0
+            check_hostname $(($isp + 1)) $hostname $hq_r_name
+            check_hostname $(($isp + 2)) $hostname $br_r_name
+            check_hostname $(($isp + 3)) $hostname $hq_srv_name
+            check_hostname $(($isp + 4)) $hostname $br_srv_name
+            check_hostname $(($isp + 5)) $hostname $cli_name
+            if [[ $result = 5 ]]; then
+                echo -e "\033[32mИмена машинам заданы верно\033[0m"
+            else
+                echo -e "\033[31mИмена машин заданы не верно\033[0m"
+            fi
+            echo "--------------Проверка имен завершена--------------"
+            # read -p "Нажмите любую клавишу для продолжения" -t 5
+            # check_ip $(($isp + 1)) $ens18 $hq_r_isp $ens18_gw $hq_r_gw $ens18_dns $hq_r_dns
+            # check_ip $(($isp + 1)) $ens19 $hq_r_hq_srv
+            # check_ip $(($isp + 2)) $ens18 $br_r_isp $ens18_gw $br_r_gw $ens18_dns $br_r_dns
+            # check_ip $(($isp + 2)) $ens19 $br_r_br_srv
+            # check_ip $(($isp + 3)) $ens18 $hq_srv $ens18_gw $hq_srv_gw $ens18_dns $hq_srv_dns
+            # check_ip $(($isp + 4)) $ens18 $br_srv $ens18_gw $br_srv_gw $ens18_dns $br_srv_dns
         ;; 
         *)
             echo "Нереализуемый выбор"
