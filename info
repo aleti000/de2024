@@ -1,0 +1,15 @@
+#Имена устройств
+hq_r_name=hq-r
+hq_srv_name=hq-srv
+br_r_name=br-r
+br_srv_name=br-srv
+cli_name=cli
+isp_name=isp
+#Ip адреса устройств
+hq_r_isp=
+hq_r_hq_srv=
+br_r_isp=
+br_r_br_srv=
+hq_srv=
+br_srv=
+cli=
