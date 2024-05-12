@@ -284,16 +284,16 @@ function main() {
         ;;
         5)
             read -p "Укажите номер рабочего места (VMID ISP): " isp
-            # echo "Запуск машин рабочего места"
-            # qm start $isp
-            # qm start $(($isp+1))
-            # qm start $(($isp+2))
-            # qm start $(($isp+3))
-            # qm start $(($isp+4))
-            # qm start $(($isp+5))
-            # sleep 20
-            # echo -e "\033[32m DONE \033[0m" 
-            # sleep 1
+            echo "Запуск машин рабочего места"
+            qm start $isp
+            qm start $(($isp+1))
+            qm start $(($isp+2))
+            qm start $(($isp+3))
+            qm start $(($isp+4))
+            qm start $(($isp+5))
+            sleep 20
+            echo -e "\033[32m DONE \033[0m" 
+            sleep 1
             clear
             echo "--------------Проверка имен устройств--------------"
             result=0
@@ -308,13 +308,13 @@ function main() {
                 echo -e "\033[31mИмена машин заданы не верно\033[0m"
             fi
             echo "--------------Проверка имен завершена--------------"
-            # read -p "Нажмите любую клавишу для продолжения" -t 5
-            # check_ip $(($isp + 1)) $ens18 $hq_r_isp $ens18_gw $hq_r_gw $ens18_dns $hq_r_dns
-            # check_ip $(($isp + 1)) $ens19 $hq_r_hq_srv
-            # check_ip $(($isp + 2)) $ens18 $br_r_isp $ens18_gw $br_r_gw $ens18_dns $br_r_dns
-            # check_ip $(($isp + 2)) $ens19 $br_r_br_srv
-            # check_ip $(($isp + 3)) $ens18 $hq_srv $ens18_gw $hq_srv_gw $ens18_dns $hq_srv_dns
-            # check_ip $(($isp + 4)) $ens18 $br_srv $ens18_gw $br_srv_gw $ens18_dns $br_srv_dns
+            read -p "Нажмите любую клавишу для продолжения" -t 5
+            check_ip $(($isp + 1)) $ens18 $hq_r_isp $ens18_gw $hq_r_gw $ens18_dns $hq_r_dns
+            check_ip $(($isp + 1)) $ens19 $hq_r_hq_srv
+            check_ip $(($isp + 2)) $ens18 $br_r_isp $ens18_gw $br_r_gw $ens18_dns $br_r_dns
+            check_ip $(($isp + 2)) $ens19 $br_r_br_srv
+            check_ip $(($isp + 3)) $ens18 $hq_srv $ens18_gw $hq_srv_gw $ens18_dns $hq_srv_dns
+            check_ip $(($isp + 4)) $ens18 $br_srv $ens18_gw $br_srv_gw $ens18_dns $br_srv_dns
         ;; 
         *)
             echo "Нереализуемый выбор"
