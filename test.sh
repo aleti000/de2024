@@ -27,15 +27,15 @@ br_srv_name=$(grep br_srv_name= ./info | sed 's/.*br_srv_name=//')
 br_srv=$(grep br_srv= ./info | sed 's/.*br_srv=//')
 br_srv_gw=$(grep br_srv_gw= ./info | sed 's/.*br_srv_gw=//')
 br_srv_dns=$(grep br_srv_dns= ./info | sed 's/.*br_srv_dns=//')
+
 cli_name=$(grep cli_name= ./info | sed 's/.*cli_name=//')
-isp_name=$(grep isp_name= ./info | sed 's/.*isp_name=//' )
 cli=$(grep cli= ./info | sed 's/.*cli=//')
 
 function download_template { #Загрузка шаблонов машин CLI и SRV
     echo "Установка программного обеспечения, ожидайте"
     {
         apt update;
-        apt-get install python3-pip python3-venv -y;
+        apt-get install python3-pip python3-venv expect -y;
         python3 -m venv myenv;
         source myenv/bin/activate;
         pip3 install wldhx.yadisk-direct;
@@ -149,8 +149,9 @@ function deploy_workplace { #Развертка стенда
         qm guest exec $nvm -- bash -c "iptables-save -f /etc/sysconfig/iptables"
         qm guest exec $nvm -- bash -c "systemctl enable iptables"
         qm guest exec $nvm -- bash -c "systemctl restart network"
+        }&>/dev/null
+        expect passwd.sh $nvm
         qm stop $nvm
-    }&>/dev/null
     echo -e "\033[32m DONE \033[0m" 
     echo "Создание учетной записи"
     {
@@ -308,13 +309,18 @@ function main() {
                 echo -e "\033[31mИмена машин заданы не верно\033[0m"
             fi
             echo "--------------Проверка имен завершена--------------"
-            read -p "Нажмите любую клавишу для продолжения" -t 5
             check_ip $(($isp + 1)) $ens18 $hq_r_isp $ens18_gw $hq_r_gw $ens18_dns $hq_r_dns
             check_ip $(($isp + 1)) $ens19 $hq_r_hq_srv
             check_ip $(($isp + 2)) $ens18 $br_r_isp $ens18_gw $br_r_gw $ens18_dns $br_r_dns
             check_ip $(($isp + 2)) $ens19 $br_r_br_srv
             check_ip $(($isp + 3)) $ens18 $hq_srv $ens18_gw $hq_srv_gw $ens18_dns $hq_srv_dns
             check_ip $(($isp + 4)) $ens18 $br_srv $ens18_gw $br_srv_gw $ens18_dns $br_srv_dns
+            qm stop $isp
+            qm stop $(($isp+1))
+            qm stop $(($isp+2))
+            qm stop $(($isp+3))
+            qm stop $(($isp+4))
+            qm stop $(($isp+5))
         ;; 
         *)
             echo "Нереализуемый выбор"
