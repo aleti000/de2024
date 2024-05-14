@@ -149,9 +149,9 @@ function deploy_workplace { #Развертка стенда
         qm guest exec $nvm -- bash -c "iptables-save -f /etc/sysconfig/iptables"
         qm guest exec $nvm -- bash -c "systemctl enable iptables"
         qm guest exec $nvm -- bash -c "systemctl restart network"
-        }&>/dev/null
         expect passwd.sh $nvm
         qm stop $nvm
+        }&>/dev/null
     echo -e "\033[32m DONE \033[0m" 
     echo "Создание учетной записи"
     {
