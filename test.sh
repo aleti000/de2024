@@ -127,33 +127,33 @@ function deploy_workplace { #Развертка стенда
         qm set $nvm5 --ide2 none --net0 virtio,bridge=$br1 --tags DE_stand_user$nvm --cdrom none
     }&>/dev/null
     echo "Развертывание машин для рабочего места $i завершено"
-        echo "Настройка сетевых параметров ISP для рабочего места $i"
-        qm start $nvm                                   #Запуск ISP
-        #Время ожидания запуска машин
-        sleep $time         
-    {
-        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens19"
-        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens19/options"
-        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens19/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 1.1.1.1/30 > /etc/net/ifaces/ens19/ipv4address"
-        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens20"
-        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens20/options"
-        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens20/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 2.2.2.1/30 > /etc/net/ifaces/ens20/ipv4address"
-        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens21"
-        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens21/options"
-        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens21/ipv4address"
-        qm guest exec $nvm -- bash -c "echo 3.3.3.1/30 > /etc/net/ifaces/ens21/ipv4address"
-        qm guest exec $nvm -- bash -c "sed -i '/^net.ipv4.ip_forward =/s/=.*/= 1/' /etc/net/sysctl.conf"
-        qm guest exec $nvm -- bash -c "iptables -t nat -A POSTROUTING -j MASQUERADE"
-        qm guest exec $nvm -- bash -c "iptables-save -f /etc/sysconfig/iptables"
-        qm guest exec $nvm -- bash -c "systemctl enable iptables"
-        qm guest exec $nvm -- bash -c "systemctl restart network"
-        expect passwd.sh $nvm
-        qm stop $nvm
-
-        }&>/dev/null
-    echo -e "\033[32m DONE \033[0m" 
+#       echo "Настройка сетевых параметров ISP для рабочего места $i"
+#        qm start $nvm                                   #Запуск ISP
+#        #Время ожидания запуска машин
+#        sleep $time         
+#    {
+#        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens19"
+#        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens19/options"
+#        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens19/ipv4address"
+#        qm guest exec $nvm -- bash -c "echo 1.1.1.1/30 > /etc/net/ifaces/ens19/ipv4address"
+#        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens20"
+#        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens20/options"
+#        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens20/ipv4address"
+#        qm guest exec $nvm -- bash -c "echo 2.2.2.1/30 > /etc/net/ifaces/ens20/ipv4address"
+#        qm guest exec $nvm -- bash -c "cp -R /etc/net/ifaces/ens18 /etc/net/ifaces/ens21"
+#        qm guest exec $nvm -- bash -c "sed -i '/^BOOTPROTO=/s/=.*/=static/' /etc/net/ifaces/ens21/options"
+#        qm guest exec $nvm -- bash -c "touch /etc/net/ifaces/ens21/ipv4address"
+#        qm guest exec $nvm -- bash -c "echo 3.3.3.1/30 > /etc/net/ifaces/ens21/ipv4address"
+#        qm guest exec $nvm -- bash -c "sed -i '/^net.ipv4.ip_forward =/s/=.*/= 1/' /etc/net/sysctl.conf"
+#        qm guest exec $nvm -- bash -c "iptables -t nat -A POSTROUTING -j MASQUERADE"
+#        qm guest exec $nvm -- bash -c "iptables-save -f /etc/sysconfig/iptables"
+#        qm guest exec $nvm -- bash -c "systemctl enable iptables"
+#        qm guest exec $nvm -- bash -c "systemctl restart network"
+#        expect passwd.sh $nvm
+#        qm stop $nvm
+#
+#        }&>/dev/null
+#    echo -e "\033[32m DONE \033[0m" 
     echo "Создание учетной записи"
     {
         pveum group add student-de --comment "users for DE"
@@ -271,7 +271,7 @@ function main() {
             read -p "Введите VMID шаблона CLI: " cli
             read -p "Введите количество стендов: " workplace
             read -p "Укажите VMID первой машины (-10): " first_isp
-            read -p "Укажите примерное время включения ISP (в сек), важно для настройки ISP (для SSD - 30): " time
+ #           read -p "Укажите примерное время включения ISP (в сек), важно для настройки ISP (для SSD - 30): " time
             deploy_workplaces
             #sleep 1
             #systemctl restart networking
